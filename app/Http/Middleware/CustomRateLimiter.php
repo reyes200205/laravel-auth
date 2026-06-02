@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,6 +21,16 @@ class CustomRateLimiter
 
         if (RateLimiter::tooManyAttempts($throttleKey, $maxAttempts)) {
             $seconds = RateLimiter::availableIn($throttleKey);
+
+            Log::channel('session')->alert('Too many requests', [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'key_name' => $keyName,
+                'max_attempts' => $maxAttempts,
+                'decay_minutes' => $decayMinutes,
+                'throttle_key' => $throttleKey,
+                'seconds' => $seconds,
+            ]);
 
             // Si es una petición de Inertia
             if ($request->hasHeader('X-Inertia')) {

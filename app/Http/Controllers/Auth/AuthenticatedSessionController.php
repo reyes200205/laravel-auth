@@ -8,6 +8,7 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,6 +34,12 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        Log::channel('session')->info('new user session registred', [
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'user' => $request->user(),
+        ]);
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }
