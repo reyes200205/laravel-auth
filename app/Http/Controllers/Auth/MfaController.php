@@ -34,6 +34,8 @@ class MfaController extends Controller
 
         $userId = session()->get('mfa:user_id');
         $user = User::findOrFail($userId);
+        
+        $activeMethod = session()->get('mfa:active_method', 'email_otp');
 
         // Ofuscar parte del correo para mejorar la privacidad en la UI
         $emailParts = explode('@', $user->email);
@@ -42,6 +44,7 @@ class MfaController extends Controller
         return Inertia::render('Auth/MfaChallenge', [
             'status' => session('status'),
             'email' => $maskedEmail,
+            'activeMethod' => $activeMethod,
         ]);
     }
 
@@ -63,19 +66,34 @@ class MfaController extends Controller
 
         $userId = session()->get('mfa:user_id');
         $user = User::findOrFail($userId);
+        $activeMethod = session()->get('mfa:active_method', 'email_otp');
 
-        // Verificamos el código usando el servicio
-        $isValid = $this->mfaService->verifyChallenge($user, 'email_otp', $request->code);
+        // Verificamos el código usando el servicio con el método activo actual
+        $isValid = $this->mfaService->verifyChallenge($user, $activeMethod, $request->code);
 
         if ($isValid) {
-            // Logueamos al usuario con la preferencia guardada
+            // Agregamos el método actual a la lista de factores completados en la sesión
+            session()->push('mfa:completed_factors', $activeMethod);
+
+            // Consultamos si queda algún factor pendiente por cumplir
+            $nextFactor = $this->mfaService->getNextPendingFactor($user);
+
+            if ($nextFactor) {
+                // Hay otro factor pendiente de verificar (ej. 'totp')
+                $this->mfaService->sendChallenge($user, $nextFactor);
+                session()->put('mfa:active_method', $nextFactor);
+
+                return redirect()->route('auth.mfa')->with('status', 'Paso verificado. Por favor, completa el siguiente factor de seguridad.');
+            }
+
+            // Si se superaron todos los factores, se loguea oficialmente al usuario
             Auth::login($user, session()->get('mfa:remember', false));
 
             // Regeneramos la sesión por seguridad
             $request->session()->regenerate();
 
             // Limpiamos las variables de sesión del flujo MFA
-            $request->session()->forget(['mfa:user_id', 'mfa:remember']);
+            $request->session()->forget(['mfa:completed_factors', 'mfa:user_id', 'mfa:remember', 'mfa:active_method']);
 
             Log::channel('session')->info('new user session registered (MFA passed)', [
                 'ip' => $request->ip(),
@@ -102,10 +120,11 @@ class MfaController extends Controller
 
         $userId = session()->get('mfa:user_id');
         $user = User::findOrFail($userId);
+        $activeMethod = session()->get('mfa:active_method', 'email_otp');
 
-        // Re-enviamos el desafío
-        $this->mfaService->sendChallenge($user, 'email_otp');
+        // Re-enviamos el desafío según el método activo actual
+        $this->mfaService->sendChallenge($user, $activeMethod);
 
-        return back()->with('status', 'Se ha enviado un nuevo código de verificación a tu correo.');
+        return back()->with('status', 'Se ha enviado un nuevo código de verificación.');
     }
 }

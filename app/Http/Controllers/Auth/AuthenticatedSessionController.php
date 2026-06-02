@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Providers\RouteServiceProvider;
+use App\Services\MfaService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,35 +27,32 @@ class AuthenticatedSessionController extends Controller
         ]);
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        // Valida credenciales y retorna el usuario sin iniciar sesión
+        $user = $request->authenticate();
 
-        $user = $request->user();
-        $mfaService = app(\App\Services\MfaService::class);
+        $mfaService = app(MfaService::class);
 
-        if ($mfaService->requiresMfa($user)) {
-            $remember = $request->boolean('remember');
+        // Inicializa el registro de factores de autenticación
+        session()->put('mfa:completed_factors', ['password']);
+        session()->put('mfa:user_id', $user->id);
+        session()->put('mfa:remember', $request->boolean('remember'));
 
-            // Cierra la sesión activa de inmediato
-            Auth::guard('web')->logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+        // Busca si hay algún factor pendiente para el rol de este usuario
+        $nextFactor = $mfaService->getNextPendingFactor($user);
 
-            // Almacena el ID de usuario y la opción de recordar en la sesión limpia
-            session()->put('mfa:user_id', $user->id);
-            session()->put('mfa:remember', $remember);
-
-            // Dispara el envío de OTP por correo
-            $mfaService->sendChallenge($user, 'email_otp');
+        if ($nextFactor) {
+            $mfaService->sendChallenge($user, $nextFactor);
+            session()->put('mfa:active_method', $nextFactor);
 
             return redirect()->route('auth.mfa');
         }
 
+        Auth::login($user, $request->boolean('remember'));
+
         $request->session()->regenerate();
+        $request->session()->forget(['mfa:completed_factors', 'mfa:user_id', 'mfa:remember', 'mfa:active_method']);
 
         Log::channel('session')->info('new user session registered', [
             'ip' => $request->ip(),

@@ -14,6 +14,10 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    activeMethod: {
+        type: String,
+        default: 'email_otp',
+    },
 });
 
 const digits = ref(['', '', '', '', '', '']);
@@ -47,7 +51,13 @@ const startTimer = () => {
 };
 
 onMounted(() => {
-    startTimer();
+    // Solo inicia el temporizador para métodos que requieren envío (e.g. email, sms)
+    if (props.activeMethod === 'email_otp' || props.activeMethod === 'sms_otp') {
+        startTimer();
+    } else {
+        timerActive.value = false;
+    }
+
     // Enfoca el primer input de forma automática
     if (inputs.value[0]) {
         inputs.value[0].focus();
@@ -136,17 +146,32 @@ const resendCode = () => {
         <div class="mb-6 text-center">
             <!-- Icono decorativo con animación -->
             <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 mb-4 animate-bounce">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <!-- Icono de Correo para OTP por email -->
+                <svg v-if="activeMethod === 'email_otp'" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 19v-8.93a2 2 0 01.89-1.664l8-5.333a2 2 0 012.22 0l8 5.333A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
+                </svg>
+                <!-- Icono de Escudo/Llave para TOTP (Google Authenticator) -->
+                <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
             </div>
             
             <h2 class="text-xl font-bold text-gray-950 dark:text-white">
                 Verifica tu identidad
             </h2>
-            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            
+            <p v-if="activeMethod === 'email_otp'" class="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                 Hemos enviado un código temporal de 6 dígitos a la dirección:<br>
                 <span class="font-semibold text-gray-800 dark:text-gray-200">{{ email }}</span>
+            </p>
+            <p v-else-if="activeMethod === 'totp'" class="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                Abre tu aplicación de autenticación (Google Authenticator, Authy, etc.) e ingresa el código temporal de 6 dígitos generado.
+            </p>
+            <p v-else-if="activeMethod === 'sms_otp'" class="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                Hemos enviado un mensaje de texto SMS con tu código de verificación.
+            </p>
+            <p v-else class="mt-2 text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                Ingresa tu código de verificación de 6 dígitos.
             </p>
         </div>
 
@@ -188,8 +213,8 @@ const resendCode = () => {
                     <span v-else>Verificar Código</span>
                 </PrimaryButton>
 
-                <!-- Botón/Texto de Reenvío -->
-                <div class="text-xs text-gray-500 dark:text-gray-400">
+                <!-- Botón/Texto de Reenvío (Solo aplicable para métodos que envían código) -->
+                <div v-if="activeMethod === 'email_otp' || activeMethod === 'sms_otp'" class="text-xs text-gray-500 dark:text-gray-400">
                     <span v-if="timerActive">
                         ¿No recibiste el código? Reenviar en <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ countdown }}s</span>
                     </span>

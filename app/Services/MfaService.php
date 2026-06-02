@@ -7,23 +7,51 @@ use App\Models\User;
 class MfaService
 {
     /**
+     * Define los tipos de factores requeridos según el rol del usuario
+     */
+    public function getRequiredFactors(User $user): array
+    {
+        if ($user->hasRole('super-admin')) {
+            return ['password', 'email_otp'];
+        }
+
+        if ($user->hasRole('user')) {
+            return ['password', 'email_otp'];
+        }
+
+        return ['password'];
+    }
+
+    /**
+     * Get the next pending authentication factor.
+     */
+    public function getNextPendingFactor(User $user): ?string
+    {
+        $required = $this->getRequiredFactors($user);
+        $completed = session()->get('mfa:completed_factors', []);
+
+        foreach ($required as $factor) {
+            if (!in_array($factor, $completed)) {
+                return $factor;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Determine if the user requires MFA based on their role.
      */
     public function requiresMfa(User $user): bool
     {
-        // El rol 'guest' NO requiere doble factor.
-        // Cualquier otro rol (como 'user' o 'super-admin') sí requiere doble factor.
         return ! $user->hasRole('guest');
     }
 
     /**
      * Get available MFA methods for the user.
-     * En el futuro, esta lista puede guardarse en la base de datos por usuario.
      */
     public function getAvailableMethods(User $user): array
     {
-        // Diseñado de forma escalable para soportar múltiples métodos en el futuro.
-        // Ejemplo: ['email_otp', 'totp', 'sms_otp', 'webauthn_passkey']
         return ['email_otp'];
     }
 
@@ -39,7 +67,7 @@ class MfaService
 
         // Futuros métodos:
         // if ($method === 'sms_otp') { ... }
-        // if ($method === 'totp') { ... } // TOTP no envía nada, el usuario lo genera en su app.
+        // if ($method === 'totp') { ... } // El TOTP no envía nada de forma activa.
 
         return false;
     }
