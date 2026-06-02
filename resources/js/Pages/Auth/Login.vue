@@ -67,12 +67,18 @@ onUnmounted(() => {
 
 const submit = () => {
     form.post(route('login'), {
-        onFinish: () => {
-            form.reset('password');
-            if (turnstileWidgetId !== null && window.turnstile) {
-                window.turnstile.reset(turnstileWidgetId);
+        onError: () => {
+            if (turnstileWidgetId !== null && window.turnstile && turnstileContainer.value) {
+                try {
+                    window.turnstile.reset(turnstileWidgetId);
+                } catch (e) {
+                    console.warn('Turnstile reset ignored:', e);
+                }
                 form['cf-turnstile-response'] = '';
             }
+        },
+        onFinish: () => {
+            form.reset('password');
         },
     });
 };

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
@@ -8,6 +8,35 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
+
+const getCookie = (name) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+};
+
+let cookieWatcher = null;
+
+onMounted(() => {
+    const initialToken = getCookie('XSRF-TOKEN');
+
+    cookieWatcher = setInterval(() => {
+        const currentToken = getCookie('XSRF-TOKEN');
+        
+        // Si el token desaparece (limpieza de cookies) o cambia (cierre de sesión en otra pestaña)
+        if (!currentToken || (initialToken && currentToken !== initialToken)) {
+            clearInterval(cookieWatcher);
+            window.location.reload();
+        }
+    }, 2000);
+});
+
+onUnmounted(() => {
+    if (cookieWatcher) {
+        clearInterval(cookieWatcher);
+    }
+});
 </script>
 
 <template>

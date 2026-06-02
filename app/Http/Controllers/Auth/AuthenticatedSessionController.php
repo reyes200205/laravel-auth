@@ -33,12 +33,33 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $user = $request->user();
+        $mfaService = app(\App\Services\MfaService::class);
+
+        if ($mfaService->requiresMfa($user)) {
+            $remember = $request->boolean('remember');
+
+            // Cierra la sesión activa de inmediato
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            // Almacena el ID de usuario y la opción de recordar en la sesión limpia
+            session()->put('mfa:user_id', $user->id);
+            session()->put('mfa:remember', $remember);
+
+            // Dispara el envío de OTP por correo
+            $mfaService->sendChallenge($user, 'email_otp');
+
+            return redirect()->route('auth.mfa');
+        }
+
         $request->session()->regenerate();
 
-        Log::channel('session')->info('new user session registred', [
+        Log::channel('session')->info('new user session registered', [
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
-            'user' => $request->user(),
+            'user' => $user->email,
         ]);
 
         return redirect()->intended(RouteServiceProvider::HOME);
