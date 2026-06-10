@@ -57,21 +57,61 @@ class MfaController extends Controller
             return redirect()->route('login');
         }
 
-        $request->validate([
-            'code' => 'required|string|size:6',
-        ], [
-            'code.required' => 'El código de verificación es obligatorio.',
-            'code.size' => 'El código debe tener exactamente 6 dígitos.',
-        ]);
-
         $userId = session()->get('mfa:user_id');
         $user = User::findOrFail($userId);
         $activeMethod = session()->get('mfa:active_method', 'email_otp');
 
-        // Verificamos el código usando el servicio con el método activo actual
-        $isValid = $this->mfaService->verifyChallenge($user, $activeMethod, $request->code);
+        // Validación condicional según el método de autenticación activo
+        if ($activeMethod === 'location') {
+            $request->validate([
+                'latitude' => 'required|numeric',
+                'longitude' => 'required|numeric',
+            ], [
+                'latitude.required' => 'La latitud es requerida para verificar tu ubicación.',
+                'latitude.numeric' => 'La latitud debe ser un número válido.',
+                'longitude.required' => 'La longitud es requerida para verificar tu ubicación.',
+                'longitude.numeric' => 'La longitud debe ser un número válido.',
+            ]);
+
+            $payload = [
+                'latitude' => $request->input('latitude'),
+                'longitude' => $request->input('longitude'),
+                'ip' => $request->ip(),
+            ];
+            
+
+            Log::channel('auth')->warning('Intento fallido de verificación de ubicación 3FA.', [
+                'user' => $user->email,
+                'factor' => $activeMethod,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'latitude' => $request->input('latitude'),
+                'longitude' => $request->input('longitude'),
+                'datetime' => now(),
+            ]);
+        } else {
+            $request->validate([
+                'code' => 'required|string|size:6',
+            ], [
+                'code.required' => 'El código de verificación es obligatorio.',
+                'code.size' => 'El código debe tener exactamente 6 dígitos.',
+            ]);
+
+            $payload = $request->code;
+        }
+
+        // Verificamos el factor de autenticación actual
+        $isValid = $this->mfaService->verifyChallenge($user, $activeMethod, $payload);
 
         if ($isValid) {
+            Log::channel('auth')->info('Factor de autenticación MFA verificado con éxito.', [
+                'user' => $user->email,
+                'factor' => $activeMethod,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'datetime' => now(),
+            ]);
+
             // Agregamos el método actual a la lista de factores completados en la sesión
             session()->push('mfa:completed_factors', $activeMethod);
 
@@ -79,7 +119,7 @@ class MfaController extends Controller
             $nextFactor = $this->mfaService->getNextPendingFactor($user);
 
             if ($nextFactor) {
-                // Hay otro factor pendiente de verificar (ej. 'totp')
+                // Hay otro factor pendiente de verificar (ej. 'location')
                 $this->mfaService->sendChallenge($user, $nextFactor);
                 session()->put('mfa:active_method', $nextFactor);
 
@@ -104,6 +144,28 @@ class MfaController extends Controller
             return redirect()->intended(RouteServiceProvider::HOME);
         }
 
+        if ($activeMethod === 'location') {
+            Log::channel('auth')->warning('Intento fallido de verificación de ubicación híbrida 3FA.', [
+                'user' => $user->email,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'latitude' => $request->input('latitude'),
+                'longitude' => $request->input('longitude'),
+                'datetime' => now(),
+            ]);
+
+            throw ValidationException::withMessages([
+                'latitude' => 'Tu ubicación física o red de conexión no están autorizadas para esta oficina.',
+            ]);
+        }
+
+        Log::channel('auth')->warning('Se intento iniciar sesión con un código OTP incorrecto.', [
+            'user' => $user->email,
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'datetime' => now(),
+        ]);
+            
         throw ValidationException::withMessages([
             'code' => 'El código ingresado es incorrecto, ha expirado o no coincide con tu sesión.',
         ]);

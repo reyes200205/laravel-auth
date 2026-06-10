@@ -32,8 +32,8 @@ class CustomRateLimiter
                 'seconds' => $seconds,
             ]);
 
-            // Si es una petición de Inertia
-            if ($request->hasHeader('X-Inertia')) {
+            // Si es una petición de Inertia o es una petición web normal (navegador)
+            if ($request->hasHeader('X-Inertia') || !$request->expectsJson()) {
                 return Inertia::render('Errors/TooManyRequests', [
                     'seconds' => $seconds,
                 ])->toResponse($request)->setStatusCode(429);
@@ -45,9 +45,6 @@ class CustomRateLimiter
                     'message' => "Too many requests. Please try again in {$seconds} seconds."
                 ], 429);
             }
-
-            // Respuesta para peticiones tradicionales del navegador
-            abort(429, "Too many requests. Please try again in {$seconds} seconds.");
         }
 
         RateLimiter::hit($throttleKey, $decayMinutes * 60);

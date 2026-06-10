@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Office;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -14,21 +15,54 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::create([
+        // Crear Oficinas
+        $officeUtt = Office::create([
+            'name' => 'UTT',
+            'latitude' => 25.53060477270776,
+            'longitude' => -103.32148524907628,
+            'radius' => 300, // Incrementado de 200 a 300 metros para permitir el acceso del usuario
+            'allowed_ips' => '127.0.0.1,::1',
+        ]);
+
+        $officeCasa = Office::create([
+            'name' => 'Casa',
+            'latitude' => 25.6005072,
+            'longitude' => -103.4151497,
+            'radius' => 500, // 250 metros de margen
+            'allowed_ips' => '127.0.0.1,::1',
+        ]);
+
+        // Crear Usuarios Administradores (Super Admins)
+        $uttAdmin = User::create([
+            'name' => 'Alessandro (UTT)',
+            'email' => 'sifuentesmarcelo78@gmail.com',
+            'password' => Hash::make('Miri_ta?'),
+            'office_id' => $officeUtt->id,
+        ]);
+        $uttAdmin->assignRole('super-admin');
+
+        $homeAdmin = User::create([
+            'name' => 'Alejandro (CASA)',
+            'email' => 'reyes221119@gmail.com',
+            'password' => Hash::make('Reyes221119?'),
+            'office_id' => $officeCasa->id,
+        ]);
+        $homeAdmin->assignRole('super-admin');
+
+        // Mantener los usuarios base y asignarles oficina si es necesario
+        $superAdmin = User::create([
             'name' => 'Admin User',
             'email' => 'super@gmail.com',
             'password' => Hash::make('password'),
+            'office_id' => $officeUtt->id, // Asignar UTT por defecto
         ]);
+        $superAdmin->assignRole('super-admin');
 
-        $user->assignRole('super-admin');
-
-        $user = User::create([
+        $regularUser = User::create([
             'name' => 'User',
             'email' => 'user@gmail.com',
             'password' => Hash::make('password'),
         ]);
-
-        $user->assignRole('user');
-
+        $regularUser->assignRole('user');
     }
 }

@@ -43,6 +43,14 @@ class AuthenticatedSessionController extends Controller
         $nextFactor = $mfaService->getNextPendingFactor($user);
 
         if ($nextFactor) {
+            Log::channel('auth')->info('Primer factor de autenticación (contraseña) verificado con éxito. Iniciando flujo MFA.', [
+                'user' => $user->email,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'next_factor' => $nextFactor,
+                'datetime' => now(),
+            ]);
+
             $mfaService->sendChallenge($user, $nextFactor);
             session()->put('mfa:active_method', $nextFactor);
 
@@ -68,6 +76,17 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+
+        if ($user) {
+            Log::channel('session')->info('Sesión cerrada con éxito.', [
+                'user' => $user->email,
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'datetime' => now(),
+            ]);
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

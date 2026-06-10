@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 
 use App\Rules\Turnstile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class LoginRequest extends FormRequest
 {
@@ -64,6 +65,11 @@ class LoginRequest extends FormRequest
         if (! $user || ! Hash::check($this->password, $user->password)) {
             RateLimiter::hit($this->throttleKey());
 
+            Log::channel('auth')->warning('Intento de login fallido', [
+                'ip' => $this->ip(),
+                'user_agent' => $this->userAgent(),
+                'user' => $this->email,
+            ]);
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);

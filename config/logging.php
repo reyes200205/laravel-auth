@@ -58,6 +58,11 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        'auth' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/auth.log'),
+            'level' => 'debug',
+        ],
         'session' => [
             'driver' => 'single',
             'path' => storage_path('logs/session.log'),
