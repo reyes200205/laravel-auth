@@ -34,9 +34,9 @@ class RegisteredUserController extends Controller
     /**
      * Procesa la solicitud de registro de un nuevo usuario.
      *
-     * Valida los datos provistos (nombre, email único, robustez de la contraseña y validación del captcha de Turnstile si está activo).
-     * Crea el registro en la base de datos, le asigna el rol 'guest' por defecto, genera logs de auditoría de seguridad,
-     * dispara el evento `Registered`, realiza el inicio de sesión automático y redirige al Home.
+     * Valida los datos provistos (nombre, email único, regex de la contraseña y validación del captcha).
+     * Crea el registro en la base de datos, le asigna el rol 'guest' por defecto, genera logs de auditoría,
+     * realiza el inicio de sesión automático y redirige al Home.
      *
      * @param \Illuminate\Http\Request $request Solicitud HTTP con los datos de registro y el token del captcha.
      * @return \Illuminate\Http\RedirectResponse Redirección a la ruta de inicio (Home).

@@ -56,7 +56,7 @@ return [
     /*
      * The model uses to store one-time passwords
      */
-    'model' => Spatie\OneTimePasswords\Models\OneTimePassword::class,
+    'model' => App\Models\OneTimePassword::class,
 
     /*
      * The notification used to send a one-time password to a user

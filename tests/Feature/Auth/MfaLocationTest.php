@@ -8,7 +8,7 @@ use App\Providers\RouteServiceProvider;
 use Database\Seeders\RolesAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
-use Spatie\OneTimePasswords\Models\OneTimePassword;
+use App\Models\OneTimePassword;
 use Tests\TestCase;
 
 class MfaLocationTest extends TestCase
