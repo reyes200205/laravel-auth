@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             'name' => 'UTT',
             'latitude' => 25.53060477270776,
             'longitude' => -103.32148524907628,
-            'radius' => 300, // Incrementado de 200 a 300 metros para permitir el acceso del usuario
+            'radius' => 1200, // Aumentado a 1200 metros para permitir el acceso
             'allowed_ips' => '127.0.0.1,::1',
         ]);
 

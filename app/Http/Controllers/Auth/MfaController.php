@@ -108,17 +108,6 @@ class MfaController extends Controller
                 'longitude' => $request->input('longitude'),
                 'ip' => $request->ip(),
             ];
-            
-
-            Log::channel('auth')->warning('Intento fallido de verificación de ubicación 3FA.', [
-                'user' => $user->email,
-                'factor' => $activeMethod,
-                'ip' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'latitude' => $request->input('latitude'),
-                'longitude' => $request->input('longitude'),
-                'datetime' => now(),
-            ]);
         } else {
             $request->validate([
                 'code' => 'required|string|size:6',
