@@ -10,13 +10,27 @@ use App\Services\Dashboard\GuestDashboardService;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
+/**
+ * Servicio para orquestar la lógica de negocio y presentación de los dashboards de usuario.
+ *
+ * Utiliza un patrón de factoría para instanciar el servicio específico del rol del usuario,
+ * abstrayendo la obtención de la vista y la carga de datos necesarios para renderizar el panel.
+ */
 class DashboardService
 {
     /**
-     * Resolves the proper Dashboard service based on the user's role.
+     * Resuelve y retorna el servicio de dashboard correspondiente basado en el rol del usuario.
      *
-     * @param User $user
-     * @return DashboardRoleService
+     * Este método actúa como una fábrica. Su objetivo principal es mapear el rol del usuario
+     * a su correspondiente servicio especializado (p. ej., `SuperAdminDashboardService` para 'super-admin',
+     * `UserDashboardService` para 'user', o `GuestDashboardService` para otros).
+     *
+     * **Diferencia con render():** A diferencia de `render()`, este método NO genera ninguna respuesta visual
+     * ni maneja el flujo de respuesta HTTP. Solo se encarga de instanciar la clase de servicio adecuada
+     * para delegar el control de los datos y vistas.
+     *
+     * @param \App\Models\User $user El usuario autenticado cuyo rol se evaluará.
+     * @return \App\Services\Dashboard\DashboardRoleService El servicio especializado para el rol del usuario.
      */
     public function resolveService(User $user): DashboardRoleService
     {
@@ -28,15 +42,23 @@ class DashboardService
             return new UserDashboardService();
         }
 
-        // Por defecto, se maneja como invitado
         return new GuestDashboardService();
     }
 
     /**
-     * Renders the corresponding Inertia dashboard view with its specific data.
+     * Resuelve el servicio correspondiente y renderiza la vista de Inertia con sus datos específicos.
      *
-     * @param User $user
-     * @return InertiaResponse
+     * Este método gestiona el flujo completo de presentación: primero llama a `resolveService()` para obtener
+     * el servicio del rol, luego obtiene la ruta de la vista y los datos del panel para ese rol específico,
+     * inyecta los datos del perfil y rol del usuario para la plantilla compartida, y finalmente construye y retorna
+     * la respuesta renderizada de Inertia.
+     *
+     * **Diferencia con resolveService():** A diferencia de `resolveService()`, que solo decide qué clase
+     * instanciar (fábrica), `render()` ejecuta la lógica de obtención de datos del servicio obtenido, adjunta los
+     * metadatos del usuario actual y produce la respuesta de presentación visual final (`InertiaResponse`).
+     *
+     * @param \App\Models\User $user El usuario autenticado.
+     * @return \Inertia\Response Respuesta de renderizado de vista Inertia con datos consolidados.
      */
     public function render(User $user): InertiaResponse
     {
