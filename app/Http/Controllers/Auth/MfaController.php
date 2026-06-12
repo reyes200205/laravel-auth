@@ -14,17 +14,38 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Controlador para gestionar el flujo de autenticación multifactor (MFA/3FA).
+ *
+ * Administra la presentación del desafío de seguridad (por OTP de correo o ubicación física GPS/IP),
+ * procesa las respuestas de verificación del usuario y completa la sesión al validar todos los factores.
+ */
 class MfaController extends Controller
 {
+    /**
+     * Servicio de autenticación multifactor.
+     *
+     * @var \App\Services\MfaService
+     */
     protected MfaService $mfaService;
 
+    /**
+     * Crea una nueva instancia de MfaController.
+     *
+     * @param \App\Services\MfaService $mfaService Servicio para el flujo MFA.
+     */
     public function __construct(MfaService $mfaService)
     {
         $this->mfaService = $mfaService;
     }
 
     /**
-     * Display the MFA challenge page.
+     * Muestra la página del desafío MFA correspondiente al factor activo.
+     *
+     * Si no hay un usuario en sesión MFA (`mfa:user_id`), redirige al formulario de login.
+     * Ofusca el correo del usuario antes de pasarlo a la vista por razones de privacidad.
+     *
+     * @return \Inertia\Response|\Illuminate\Http\RedirectResponse Retorna la vista del desafío o redirección.
      */
     public function create(): Response|RedirectResponse
     {
@@ -49,7 +70,16 @@ class MfaController extends Controller
     }
 
     /**
-     * Verify the MFA code.
+     * Verifica la respuesta al desafío de seguridad (OTP o Ubicación).
+     *
+     * Valida de manera condicional según el método activo:
+     * - Coordenadas (latitud, longitud) e IP para verificación híbrida por ubicación.
+     * - Código de 6 caracteres para verificación OTP de correo.
+     * Si la verificación es correcta, avanza al siguiente factor o inicia sesión oficialmente.
+     *
+     * @param \Illuminate\Http\Request $request Solicitud HTTP con el código o las coordenadas.
+     * @return \Illuminate\Http\RedirectResponse Redirección a la siguiente verificación de MFA o al Home.
+     * @throws \Illuminate\Validation\ValidationException Si el código OTP es incorrecto/expirado o si la ubicación no está autorizada.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -172,7 +202,12 @@ class MfaController extends Controller
     }
 
     /**
-     * Resend the MFA code.
+     * Vuelve a enviar el desafío OTP de verificación.
+     *
+     * Solicita al servicio MFA que despache un nuevo código al correo del usuario y retorna a la vista del reto.
+     *
+     * @param \Illuminate\Http\Request $request Solicitud HTTP.
+     * @return \Illuminate\Http\RedirectResponse Redirección hacia atrás con el estado del envío.
      */
     public function resend(Request $request): RedirectResponse
     {

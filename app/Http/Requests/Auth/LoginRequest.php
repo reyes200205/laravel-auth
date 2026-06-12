@@ -14,10 +14,15 @@ use App\Rules\Turnstile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Petición de formulario (Form Request) para gestionar la validación del inicio de sesión.
+ */
 class LoginRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Determina si el usuario está autorizado para realizar esta petición.
+     *
+     * @return bool Verdadero si está autorizado, falso de lo contrario.
      */
     public function authorize(): bool
     {
@@ -25,9 +30,11 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the validation rules that apply to the request.
+     * Obtiene las reglas de validación aplicables a la petición de inicio de sesión.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
+     * Valida la presencia de email, contraseña y el captcha de Cloudflare Turnstile si está habilitado.
+     *
+     * @return array<string, array<mixed>|string|\App\Rules\Turnstile> Reglas de validación.
      */
     public function rules(): array
     {
@@ -42,7 +49,9 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the custom validation messages.
+     * Obtiene los mensajes personalizados de error de validación.
+     *
+     * @return array<string, string> Mensajes de error personalizados.
      */
     public function messages(): array
     {
@@ -52,9 +61,14 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Attempt to authenticate the request's credentials.
+     * Intenta autenticar las credenciales provistas en la petición.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * Verifica que no se haya superado el límite de intentos (Rate Limit), busca al usuario
+     * por correo electrónico y comprueba que la contraseña sea correcta usando `Hash::check`.
+     * Si falla, registra el intento fallido en los logs de auditoría y bloquea temporalmente al usuario.
+     *
+     * @return \App\Models\User El usuario autenticado si las credenciales son válidas.
+     * @throws \Illuminate\Validation\ValidationException Si las credenciales son incorrectas o no coinciden.
      */
     public function authenticate(): \App\Models\User
     {
@@ -81,9 +95,12 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Ensure the login request is not rate limited.
+     * Asegura que la petición de inicio de sesión no haya superado el límite de intentos permitidos (Rate Limit).
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * Permite un máximo de 5 intentos. Si se supera, dispara un evento `Lockout` y lanza una excepción.
+     *
+     * @return void
+     * @throws \Illuminate\Validation\ValidationException Si se superó el límite de intentos fallidos.
      */
     public function ensureIsNotRateLimited(): void
     {
@@ -104,7 +121,9 @@ class LoginRequest extends FormRequest
     }
 
     /**
-     * Get the rate limiting throttle key for the request.
+     * Obtiene la clave de restricción (throttle key) basada en el email y la dirección IP para el limitador de peticiones.
+     *
+     * @return string Clave generada para el rate limiter.
      */
     public function throttleKey(): string
     {

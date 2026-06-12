@@ -6,10 +6,25 @@ use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\IpUtils;
 
+/**
+ * Servicio para gestionar la lógica de autenticación multifactor (MFA/3FA).
+ *
+ * Este servicio determina los factores de seguridad requeridos por el rol del usuario,
+ * identifica el siguiente factor pendiente, maneja el envío de desafíos (OTP o ubicación interactiva)
+ * y realiza validaciones híbridas que involucran direcciones IP permitidas y coordenadas GPS
+ * mediante la fórmula de Haversine.
+ */
 class MfaService
 {
     /**
-     * Define los tipos de factores requeridos según el rol del usuario
+     * Define los tipos de factores requeridos según el rol del usuario.
+     *
+     * - `super-admin`: requiere contraseña, OTP por correo y geolocalización (3 factores).
+     * - `user`: requiere contraseña y OTP por correo (2 factores).
+     * - Otros roles (p. ej., `guest`): requieren únicamente contraseña (1 factor).
+     *
+     * @param \App\Models\User $user El usuario evaluado.
+     * @return array<string> Lista de factores requeridos.
      */
     public function getRequiredFactors(User $user): array
     {
@@ -26,7 +41,12 @@ class MfaService
     }
 
     /**
-     * Get the next pending authentication factor.
+     * Obtiene el siguiente factor de autenticación pendiente para el usuario.
+     *
+     * Compara los factores requeridos con los ya completados almacenados en la sesión.
+     *
+     * @param \App\Models\User $user El usuario evaluado.
+     * @return string|null El nombre del siguiente factor pendiente (ej. 'email_otp', 'location') o null si se completaron todos.
      */
     public function getNextPendingFactor(User $user): ?string
     {
@@ -43,7 +63,12 @@ class MfaService
     }
 
     /**
-     * Determine if the user requires MFA based on their role.
+     * Determina si el usuario requiere MFA basado en su rol.
+     *
+     * Retorna verdadero para cualquier usuario que no sea un invitado ('guest').
+     *
+     * @param \App\Models\User $user El usuario evaluado.
+     * @return bool Verdadero si requiere MFA, falso de lo contrario.
      */
     public function requiresMfa(User $user): bool
     {
@@ -51,7 +76,10 @@ class MfaService
     }
 
     /**
-     * Get available MFA methods for the user.
+     * Obtiene la lista completa de métodos de MFA disponibles en el sistema.
+     *
+     * @param \App\Models\User $user El usuario evaluado.
+     * @return array<string> Lista de métodos de MFA (ej. ['email_otp', 'location']).
      */
     public function getAvailableMethods(User $user): array
     {
@@ -59,7 +87,14 @@ class MfaService
     }
 
     /**
-     * Send/initialize the challenge for a specific method.
+     * Envía o inicializa el desafío de seguridad para un método MFA específico.
+     *
+     * - Para `email_otp`, genera y envía la contraseña de un solo uso al correo.
+     * - Para `location`, no requiere acción del servidor ya que es administrada de forma interactiva en el cliente.
+     *
+     * @param \App\Models\User $user El usuario al que se envía el desafío.
+     * @param string $method Método de autenticación activo (ej. 'email_otp', 'location').
+     * @return bool Verdadero si el desafío fue enviado/inicializado exitosamente, falso de lo contrario.
      */
     public function sendChallenge(User $user, string $method): bool
     {
@@ -78,7 +113,12 @@ class MfaService
     }
 
     /**
-     * Verify the challenge code or payload.
+     * Verifica la respuesta al desafío de seguridad o carga útil (payload).
+     *
+     * @param \App\Models\User $user El usuario evaluado.
+     * @param string $method Método de autenticación a verificar (ej. 'email_otp', 'location').
+     * @param mixed $payload Código de un solo uso (string) o arreglo de datos de ubicación/IP.
+     * @return bool Verdadero si la verificación fue exitosa, falso de lo contrario.
      */
     public function verifyChallenge(User $user, string $method, $payload): bool
     {
@@ -101,7 +141,14 @@ class MfaService
     }
 
     /**
-     * Verifica de forma híbrida si la IP del cliente y sus coordenadas GPS coinciden con los datos autorizados de la oficina.
+     * Verifica de forma híbrida si la IP y coordenadas GPS coinciden con los datos autorizados de la oficina del usuario.
+     *
+     * Compara la IP del cliente con la lista de IPs permitidas en la oficina configurada.
+     * Adicionalmente, calcula la distancia geodésica entre las coordenadas GPS del cliente y las del edificio.
+     *
+     * @param \App\Models\User $user El usuario evaluado (debe tener oficina asociada).
+     * @param array $payload Arreglo con la IP y las coordenadas del cliente.
+     * @return bool Verdadero si la IP está autorizada y la distancia física es menor o igual al radio de la oficina.
      */
     protected function verifyLocation(User $user, array $payload): bool
     {
@@ -156,7 +203,13 @@ class MfaService
     }
 
     /**
-     * Calcula la distancia en metros entre dos coordenadas geográficas usando Haversine.
+     * Calcula la distancia en metros entre dos coordenadas geográficas usando la fórmula de Haversine.
+     *
+     * @param float $lat1 Latitud del punto de partida.
+     * @param float $lon1 Longitud del punto de partida.
+     * @param float $lat2 Latitud del punto de destino.
+     * @param float $lon2 Longitud del punto de destino.
+     * @return float Distancia geodésica calculada en metros.
      */
     protected function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {

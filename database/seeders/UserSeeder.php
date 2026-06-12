@@ -39,6 +39,7 @@ class UserSeeder extends Seeder
             'password' => Hash::make('Miri_ta?'),
             'office_id' => $officeUtt->id,
         ]);
+        
         $uttAdmin->assignRole('super-admin');
 
         $homeAdmin = User::create([

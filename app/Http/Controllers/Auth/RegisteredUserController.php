@@ -16,10 +16,15 @@ use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Controlador para gestionar el registro de nuevos usuarios en el sistema.
+ */
 class RegisteredUserController extends Controller
 {
     /**
-     * Display the registration view.
+     * Muestra la vista de registro de usuario.
+     *
+     * @return \Inertia\Response Vista de Inertia para el formulario de registro.
      */
     public function create(): Response
     {
@@ -27,9 +32,15 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Handle an incoming registration request.
+     * Procesa la solicitud de registro de un nuevo usuario.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * Valida los datos provistos (nombre, email único, robustez de la contraseña y validación del captcha de Turnstile si está activo).
+     * Crea el registro en la base de datos, le asigna el rol 'guest' por defecto, genera logs de auditoría de seguridad,
+     * dispara el evento `Registered`, realiza el inicio de sesión automático y redirige al Home.
+     *
+     * @param \Illuminate\Http\Request $request Solicitud HTTP con los datos de registro y el token del captcha.
+     * @return \Illuminate\Http\RedirectResponse Redirección a la ruta de inicio (Home).
+     * @throws \Illuminate\Validation\ValidationException Si falla la validación de campos o del captcha.
      */
     public function store(Request $request): RedirectResponse
     {
@@ -53,6 +64,22 @@ class RegisteredUserController extends Controller
         ]);
 
         $user->assignRole('guest');
+
+
+        Log::channel('auth')->info('New User registred In The System', [
+            'action' => 'Register',
+            'resource_id' => $user->id,
+            'resource_type' => 'User',
+            'data' => [
+                'email' => $user->email,
+                'name' => $user->name,
+            ],
+            'metadata' => [
+                'ip' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ],
+        ]);
+
 
 
         Log::channel('session')->info('User registered successfully', [

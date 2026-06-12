@@ -58,6 +58,12 @@ return [
             'ignore_exceptions' => false,
         ],
 
+        'mfa' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/mfa.log'),
+            'level' => 'debug',
+        ],
+
         'auth' => [
             'driver' => 'single',
             'path' => storage_path('logs/auth.log'),

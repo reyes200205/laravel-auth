@@ -14,10 +14,16 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Controlador para gestionar el establecimiento de una nueva contraseña tras solicitar su restablecimiento.
+ */
 class NewPasswordController extends Controller
 {
     /**
-     * Display the password reset view.
+     * Muestra la vista para restablecer la contraseña.
+     *
+     * @param \Illuminate\Http\Request $request Solicitud HTTP que contiene el token y el email.
+     * @return \Inertia\Response Vista de Inertia para resetear la contraseña.
      */
     public function create(Request $request): Response
     {
@@ -28,9 +34,15 @@ class NewPasswordController extends Controller
     }
 
     /**
-     * Handle an incoming new password request.
+     * Procesa la solicitud para guardar la nueva contraseña del usuario.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * Valida la contraseña usando reglas de robustez complejas (mayúscula, minúscula, número, carácter especial).
+     * Si el restablecimiento mediante el proveedor de contraseñas de Laravel es exitoso,
+     * actualiza la base de datos, dispara el evento `PasswordReset` y redirige al login con éxito.
+     *
+     * @param \Illuminate\Http\Request $request Solicitud HTTP con el token y las nuevas credenciales.
+     * @return \Illuminate\Http\RedirectResponse Redirección al login en caso de éxito.
+     * @throws \Illuminate\Validation\ValidationException Si falla la validación o el token es inválido.
      */
     public function store(Request $request): RedirectResponse
     {

@@ -7,10 +7,19 @@ use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Controlador para gestionar el reenvío de notificaciones de verificación de correo electrónico.
+ */
 class EmailVerificationNotificationController extends Controller
 {
     /**
-     * Send a new email verification notification.
+     * Envía una nueva notificación con el enlace de verificación de correo al usuario.
+     *
+     * Si el usuario ya verificó su correo electrónico, redirige directamente al Home.
+     * En caso contrario, despacha la notificación y retorna a la página anterior con un estado de éxito.
+     *
+     * @param \Illuminate\Http\Request $request Solicitud HTTP del usuario autenticado.
+     * @return \Illuminate\Http\RedirectResponse Redirección al Home o a la página anterior.
      */
     public function store(Request $request): RedirectResponse
     {

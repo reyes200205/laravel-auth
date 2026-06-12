@@ -8,10 +8,19 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\RedirectResponse;
 
+/**
+ * Controlador para gestionar la verificación del correo electrónico del usuario.
+ */
 class VerifyEmailController extends Controller
 {
     /**
-     * Mark the authenticated user's email address as verified.
+     * Marca la dirección de correo electrónico del usuario autenticado como verificada.
+     *
+     * Si el usuario ya verificó su correo electrónico anteriormente, redirige directamente al Home.
+     * De lo contrario, lo marca como verificado, dispara el evento `Verified` y redirige al Home con un flag de éxito.
+     *
+     * @param \Illuminate\Foundation\Auth\EmailVerificationRequest $request Petición de verificación firmada de Laravel.
+     * @return \Illuminate\Http\RedirectResponse Redirección al Home.
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {

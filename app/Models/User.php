@@ -11,6 +11,12 @@ use Spatie\OneTimePasswords\Models\Concerns\HasOneTimePasswords;
 use Spatie\Permission\Traits\HasRoles;
 
 
+/**
+ * Modelo de datos que representa a un Usuario en la aplicación.
+ *
+ * Administra la autenticación básica, los tokens de la API mediante Sanctum, los roles
+ * mediante Spatie Permissions, y la lógica de contraseñas de un solo uso (OTP) para MFA.
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles, HasOneTimePasswords;
@@ -48,7 +54,9 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the office that the user is assigned to.
+     * Obtiene la relación de la oficina asignada al usuario.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo Relación Eloquent con el modelo Office.
      */
     public function office(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
