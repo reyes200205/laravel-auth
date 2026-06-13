@@ -98,7 +98,7 @@
                     <div
                         class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all duration-200">
                         <div class="flex items-center justify-between mb-4">
-                            <span class="text-sm font-semibold text-gray-500">Estado de Seguridad</span>
+                            <span class="text-sm font-semibold text-gray-500">Auditoria Log Systema</span>
                             <div
                                 class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
@@ -108,8 +108,10 @@
                                 </svg>
                             </div>
                         </div>
-                        <div class="text-3xl font-extrabold text-indigo-600 uppercase text-lg">{{ systemStatus }}</div>
-                        <p class="text-xs text-indigo-600 font-medium mt-1">Protección activa Turnstile + 3FA</p>
+                        <a href="/internal/log-viewer"
+                            class="text-lg text-indigo-600 font-medium mt-1 hover:underline block cursor-pointer">
+                            Ver registro de logs
+                        </a>
                     </div>
                 </div>
 
