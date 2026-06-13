@@ -1,88 +1,3 @@
-<script setup>
-import Checkbox from '@/Components/Checkbox.vue';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import { ref, onMounted, onUnmounted } from 'vue';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-
-defineProps({
-    canResetPassword: {
-        type: Boolean,
-    },
-    status: {
-        type: String,
-    },
-});
-
-const page = usePage();
-const turnstileContainer = ref(null);
-let turnstileWidgetId = null;
-
-const form = useForm({
-    email: '',
-    password: '',
-    remember: false,
-    'cf-turnstile-response': '',
-});
-
-onMounted(() => {
-    const initTurnstile = () => {
-        const siteKey = page.props.turnstile_site_key;
-        if (siteKey && window.turnstile && turnstileContainer.value) {
-            turnstileWidgetId = window.turnstile.render(turnstileContainer.value, {
-                sitekey: siteKey,
-                callback: (token) => {
-                    form['cf-turnstile-response'] = token;
-                },
-                'expired-callback': () => {
-                    form['cf-turnstile-response'] = '';
-                },
-                'error-callback': () => {
-                    form['cf-turnstile-response'] = '';
-                }
-            });
-        }
-    };
-
-    if (window.turnstile) {
-        initTurnstile();
-    } else {
-        const interval = setInterval(() => {
-            if (window.turnstile) {
-                clearInterval(interval);
-                initTurnstile();
-            }
-        }, 100);
-    }
-});
-
-onUnmounted(() => {
-    if (turnstileWidgetId !== null && window.turnstile) {
-        window.turnstile.remove(turnstileWidgetId);
-    }
-});
-
-const submit = () => {
-    form.post(route('login'), {
-        onError: () => {
-            if (turnstileWidgetId !== null && window.turnstile && turnstileContainer.value) {
-                try {
-                    window.turnstile.reset(turnstileWidgetId);
-                } catch (e) {
-                    console.warn('Turnstile reset ignored:', e);
-                }
-                form['cf-turnstile-response'] = '';
-            }
-        },
-        onFinish: () => {
-            form.reset('password');
-        },
-    });
-};
-</script>
 
 <template>
     <GuestLayout>
@@ -132,7 +47,7 @@ const submit = () => {
             </div>
 
             <!-- Cloudflare Turnstile Widget -->
-            <div v-if="page.props.turnstile_site_key" class="mt-4 flex flex-col items-center justify-center">
+            <div v-if="$page.props.turnstile_site_key" class="mt-4 flex flex-col items-center justify-center">
                 <div ref="turnstileContainer"></div>
                 <InputError class="mt-2" :message="form.errors['cf-turnstile-response']" />
             </div>
@@ -163,3 +78,102 @@ const submit = () => {
         </form>
     </GuestLayout>
 </template>
+
+    <script>
+    import Checkbox from '@/Components/Checkbox.vue';
+    import GuestLayout from '@/Layouts/GuestLayout.vue';
+    import InputError from '@/Components/InputError.vue';
+    import InputLabel from '@/Components/InputLabel.vue';
+    import PrimaryButton from '@/Components/PrimaryButton.vue';
+    import TextInput from '@/Components/TextInput.vue';
+    import { Head, Link, useForm } from '@inertiajs/vue3';
+    
+    export default {
+        components: {
+            Checkbox,
+            GuestLayout,
+            InputError,
+            InputLabel,
+            PrimaryButton,
+            TextInput,
+            Head,
+            Link,
+        },
+        props: {
+            canResetPassword: {
+                type: Boolean,
+            },
+            status: {
+                type: String,
+            },
+        },
+        data() {
+            return {
+                form: useForm({
+                    email: '',
+                    password: '',
+                    remember: false,
+                    'cf-turnstile-response': '',
+                }),
+                turnstileWidgetId: null,
+            };
+        },
+        mounted() {
+            const initTurnstile = () => {
+                const siteKey = this.$page.props.turnstile_site_key;
+                if (siteKey && window.turnstile && this.$refs.turnstileContainer) {
+                    this.turnstileWidgetId = window.turnstile.render(this.$refs.turnstileContainer, {
+                        sitekey: siteKey,
+                        callback: (token) => {
+                            this.form['cf-turnstile-response'] = token;
+                        },
+                        'expired-callback': () => {
+                            this.form['cf-turnstile-response'] = '';
+                        },
+                        'error-callback': () => {
+                            this.form['cf-turnstile-response'] = '';
+                        }
+                    });
+                }
+            };
+    
+            if (window.turnstile) {
+                initTurnstile();
+            } else {
+                this.interval = setInterval(() => {
+                    if (window.turnstile) {
+                        clearInterval(this.interval);
+                        initTurnstile();
+                    }
+                }, 100);
+            }
+        },
+        unmounted() {
+            if (this.interval) {
+                clearInterval(this.interval);
+            }
+            if (this.turnstileWidgetId !== null && window.turnstile) {
+                window.turnstile.remove(this.turnstileWidgetId);
+            }
+        },
+        methods: {
+            submit() {
+                this.form.post(route('login'), {
+                    onError: () => {
+                        if (this.turnstileWidgetId !== null && window.turnstile && this.$refs.turnstileContainer) {
+                            try {
+                                window.turnstile.reset(this.turnstileWidgetId);
+                            } catch (e) {
+                                console.warn('Turnstile reset ignored:', e);
+                            }
+                            this.form['cf-turnstile-response'] = '';
+                        }
+                    },
+                    onFinish: () => {
+                        this.form.reset('password');
+                    },
+                });
+            },
+        },
+    };
+    </script>
