@@ -10,21 +10,31 @@ Esta fase valida que el formulario de inicio de sesión controle correctamente l
 
 - **Caso Intento de login con campos vacíos**
     - **Acción:** Dejar los campos de correo y contraseña vacíos y hacer clic en "Iniciar Sesión".
-    - **Resultado esperado:** El sistema no envía la petición o retorna errores de validación de Laravel ("El campo correo electrónico es obligatorio", "El campo contraseña es obligatorio").
+    - **Resultado esperado:** EL sistema deja que el ussuario envia estos campos vacios para que de esta forma pueda ejecutar la validacion de datos
+      en el backend y regrese el error correspondiente.
 - **Caso Contraseña incorrecta**
     - **A cción:** Ingresar un correo válido registrado pero con una contraseña incorrecta.
-    - **Resultado esperado:** Mensaje de error: _"Estas credenciales no coinciden con nuestros registros."_ y el usuario permanece en la pantalla de login.
+    - **Resultado esperado:** El sistema devuelve un mensaje claro "These credentials do not match our records."
 - **Caso Correo no registrado**
     - **Acción:** Intentar iniciar sesión con un correo electrónico que no existe en la base de datos.
-    - **Resultado esperado:** Mensaje de error de credenciales incorrectas.
-- **Caso Login exitoso - Usuario Estándar (Sin MFA)**
-    - **Acción:** Iniciar sesión con las credenciales de un usuario con rol `user` (ej. `user@example.com`).
-    - **Resultado esperado:** Redirección directa al Dashboard del usuario sin pasar por pantallas adicionales de verificación.
-- **Caso Login exitoso - Super Administrador (MFA Requerido)**
-    - **Acción:** Iniciar sesión con las credenciales de un usuario con rol `super-admin` (ej. `admin@example.com`).
+    - **Resultado esperado:** El sistema devuelve un mensaje claro "These credentials do not match our records."
+
+==========================================================================================================================================
+
+- **Caso Login exitoso - Usuario Estándar 2F Factor (Email + OTP)**
+    - **Acción:** Iniciar sesión con las credenciales de un usuario con rol `user` (`user@gmail.com`, `password`).
+    - **Resultado esperado:** El sistema detecta que el rol requiere múltiples factores de autenticación y lo redirige a la ruta `/auth/mfa` (Pantalla de ingreso de código OTP).
+    - **Este último caso de prueba, puede tener diferentes casos de prueba para validar que hace la validacion del segundo factor de autenticación, que es el correo electrónico.**
+    - **Prueba**: Probar el la duracion de la espiracion del codigo otp que no deberia ser validado despues de 3 minutos.
+    - **Resultado esperado:** El sistema devuelve un mensaje claro "El código ingresado es incorrecto, ha expirado o no coincide con tu sesión.."
+
+==========================================================================================================================================
+
+- **Caso Login exitoso - Super Administrador 3F Factor (Email + OTP + Geolocalización)**
+    - **Acción:** Iniciar sesión con las credenciales de un usuario con rol `super-admin` (`super@gmail.com`, `password`).
     - **Resultado esperado:** El sistema detecta que el rol requiere múltiples factores de autenticación y lo redirige a la ruta `/auth/mfa` (Pantalla de ingreso de código OTP y Geolocalización).
 
----
+    - **Este último caso de prueba, puede tener diferentes casos de prueba para validar que hace la validacion de la ip y de la geolocalizacion y la parte de .**
 
 ## Fase 2: Segundo Factor de Autenticación (MFA - Código OTP)
 

@@ -7,6 +7,10 @@
             {{ status }}
         </div>
 
+        <div v-if="serverId" class="mb-4 p-2 text-center text-xs font-semibold rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100">
+            Servidor: {{ serverId }}
+        </div>
+
         <form @submit.prevent="submit">
             <div>
                 <InputLabel for="email" value="Email" />
@@ -16,7 +20,6 @@
                     type="email"
                     class="mt-1 block w-full"
                     v-model="form.email"
-                    required
                     autofocus
                     autocomplete="username"
                 />
@@ -32,7 +35,6 @@
                     type="password"
                     class="mt-1 block w-full"
                     v-model="form.password"
-                    required
                     autocomplete="current-password"
                 />
 
@@ -105,6 +107,9 @@
             },
             status: {
                 type: String,
+            },
+            serverId: {
+                type: [String, Number],
             },
         },
         data() {

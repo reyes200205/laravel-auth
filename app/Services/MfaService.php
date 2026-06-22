@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use Spatie\OneTimePasswords\Enums\ConsumeOneTimePasswordResult;
 use Symfony\Component\HttpFoundation\IpUtils;
 
 /**
@@ -126,8 +127,7 @@ class MfaService
             if (!is_string($payload)) {
                 return false;
             }
-            $result = $user->consumeOneTimePassword($payload);
-            return $result->isOk();
+            return $this->verifyEmailOtp($user, $payload);
         }
 
         if ($method === 'location') {
@@ -138,6 +138,51 @@ class MfaService
         }
 
         return false;
+    }
+
+    /**
+     * Verifica la respuesta al desafío de correo mediante OTP de un solo uso y registra logs detallados de fallos.
+     *
+     * @param \App\Models\User $user El usuario evaluado.
+     * @param string $payload Código de un solo uso.
+     * @return bool Verdadero si el código OTP fue consumido con éxito, falso de lo contrario.
+     */
+    protected function verifyEmailOtp(User $user, string $payload): bool
+    {
+        $result = $user->consumeOneTimePassword($payload);
+        
+        if (!$result->isOk()) {
+            $log = Log::channel('auth');
+            
+            switch ($result) {
+                case ConsumeOneTimePasswordResult::OneTimePasswordExpired:
+                    $log->warning('Intento de verificación de MFA fallido: El código OTP ha expirado.', [
+                        'user' => $user->email,
+                        'datetime' => now(),
+                    ]);
+                    break;
+                case ConsumeOneTimePasswordResult::IncorrectOneTimePassword:
+                    $log->warning('Intento de verificación de MFA fallido: El código OTP es incorrecto.', [
+                        'user' => $user->email,
+                        'datetime' => now(),
+                    ]);
+                    break;
+                case ConsumeOneTimePasswordResult::RateLimitExceeded:
+                    $log->warning('Intento de verificación de MFA fallido: Límite de intentos excedido.', [
+                        'user' => $user->email,
+                        'datetime' => now(),
+                    ]);
+                    break;
+                default:
+                    $log->warning("Intento de verificación de MFA fallido: Error ({$result->value}).", [
+                        'user' => $user->email,
+                        'datetime' => now(),
+                    ]);
+                    break;
+            }
+        }
+        
+        return $result->isOk();
     }
 
     /**
