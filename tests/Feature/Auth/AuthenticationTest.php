@@ -56,4 +56,41 @@ class AuthenticationTest extends TestCase
         $this->assertGuest();
         $response->assertRedirect('/');
     }
+
+    public function test_login_attempts_are_rate_limited(): void
+    {
+        $user = User::factory()->create();
+
+        // Perform 5 failed attempts
+        for ($i = 0; $i < 5; $i++) {
+            $response = $this->post('/login', [
+                'email' => $user->email,
+                'password' => 'wrong-password',
+            ]);
+            $response->assertSessionHasErrors('email');
+            $this->assertGuest();
+        }
+
+        // The 6th attempt should trigger the validation rate limit
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertStringContainsString(
+            trans('auth.throttle', ['seconds' => 60, 'minutes' => 1]),
+            session('errors')->first('email')
+        );
+    }
+
+    public function test_login_page_is_not_rate_limited(): void
+    {
+        // Try to load the login page 12 times
+        // Previously, the middleware allowed only 10 attempts in 2 minutes
+        for ($i = 0; $i < 12; $i++) {
+            $response = $this->get('/login');
+            $response->assertStatus(200);
+        }
+    }
 }
