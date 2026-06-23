@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\OneTimePasswords\Models\OneTimePassword as BaseOneTimePassword;
 
 /**
@@ -9,6 +10,8 @@ use Spatie\OneTimePasswords\Models\OneTimePassword as BaseOneTimePassword;
  */
 class OneTimePassword extends BaseOneTimePassword
 {
+    use SoftDeletes;
+
     /**
      * Los atributos que deben ser convertidos a tipos nativos.
      *
