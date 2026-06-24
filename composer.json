@@ -12,6 +12,7 @@
         "laravel/sanctum": "^3.2",
         "laravel/tinker": "^2.8",
         "opcodesio/log-viewer": "^3.24",
+        "resend/resend-laravel": "^1.4",
         "spatie/laravel-one-time-passwords": "^1.0",
         "spatie/laravel-permission": "^6.25",
         "tightenco/ziggy": "^2.0"
