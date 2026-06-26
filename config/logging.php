@@ -75,6 +75,12 @@ return [
             'level' => 'debug',
         ],
 
+        'office' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/office.log'),
+            'level' => 'debug',
+        ],
+
         'single' => [
             'driver' => 'single',
             'path' => storage_path('logs/laravel.log'),

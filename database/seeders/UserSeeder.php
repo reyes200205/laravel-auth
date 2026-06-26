@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
             'latitude' => 25.53060477270776,
             'longitude' => -103.32148524907628,
             'radius' => 1200, // Aumentado a 1200 metros para permitir el acceso
-            'allowed_ips' => '127.0.0.1,::1',
+            'allowed_ips' => '127.0.0.1',
         ]);
 
         $officeMasterDrilling = Office::create([
@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
             'latitude' => 25.6044566,
             'longitude' => -103.3870974,
             'radius' => 1000,
-            'allowed_ips' => '127.0.0.1,::1',
+            'allowed_ips' => '127.0.0.1',
         ]);
 
         $officeCasa = Office::create([
@@ -37,7 +37,7 @@ class UserSeeder extends Seeder
             'latitude' => 25.6005072,
             'longitude' => -103.4151497,
             'radius' => 500, // 250 metros de margen
-            'allowed_ips' => '127.0.0.1,::1',
+            'allowed_ips' => '127.0.0.1',
         ]);
 
 
@@ -81,5 +81,24 @@ class UserSeeder extends Seeder
             'office_id' => $officeCasa->id,
         ]);
         $homeAdmin->assignRole('super-admin');
+
+
+
+        $NormalUserCasa = User::create([
+            'name' => 'Alejandro',
+            'email' => 'jorgerenteriareyes4@gmail.com',
+            'office_id' => $officeCasa->id,
+            'password' => Hash::make('Reyes221119?'),
+        ]);
+        $NormalUserCasa->assignRole('user');
+
+        $NormalUserUtt = User::create([
+            'name' => 'Igmar Salazar',
+            'email' => 'alereyes221119@gmail.com',
+            'password' => Hash::make('Reyes221119?'),
+            'office_id' => $officeUtt->id
+        ]);
+
+        $NormalUserUtt->assignRole('user');
     }
 }

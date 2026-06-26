@@ -210,6 +210,11 @@ class MfaService
             return false;
         }
 
+        // Rechazar direcciones IPv6 (solo se permite IPv4)
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return false;
+        }
+
         $allowedIps = array_map('trim', explode(',', $office->allowed_ips ?? ''));
 
         // Si no hay IPs configuradas, por seguridad denegamos el acceso
