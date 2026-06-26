@@ -24,6 +24,14 @@ class UserSeeder extends Seeder
             'allowed_ips' => '127.0.0.1,::1',
         ]);
 
+        $officeMasterDrilling = Office::create([
+            'name' => 'Master Drilling',
+            'latitude' => 25.6044566,
+            'longitude' => -103.3870974,
+            'radius' => 1000,
+            'allowed_ips' => '127.0.0.1,::1',
+        ]);
+
         $officeCasa = Office::create([
             'name' => 'Casa',
             'latitude' => 25.6005072,
@@ -31,6 +39,12 @@ class UserSeeder extends Seeder
             'radius' => 500, // 250 metros de margen
             'allowed_ips' => '127.0.0.1,::1',
         ]);
+
+
+
+
+        //===========================================================//
+        //usuarios UTT
 
         // Crear Usuarios Administradores (Super Admins)
         $uttAdmin = User::create([
@@ -42,6 +56,24 @@ class UserSeeder extends Seeder
         
         $uttAdmin->assignRole('super-admin');
 
+
+
+        //=================================================================//
+        // usuarios master
+        $adminMaster = User::create([
+            'name' => 'alejandro (Master Drilling)',
+            'email' => 'renteriareyesjorgealejandro4@gmail.com',
+            'password' => Hash::make('Reyes221119?'),
+            'office_id' => $officeMasterDrilling->id,
+        ]);
+
+        $adminMaster->assignRole('super-admin');
+
+
+        // ============================================================//
+
+        // ==========================================================================// 
+        // usuarios casa 
         $homeAdmin = User::create([
             'name' => 'Alejandro (CASA)',
             'email' => 'reyes221119@gmail.com',
@@ -49,21 +81,5 @@ class UserSeeder extends Seeder
             'office_id' => $officeCasa->id,
         ]);
         $homeAdmin->assignRole('super-admin');
-
-        // Mantener los usuarios base y asignarles oficina si es necesario
-        $superAdmin = User::create([
-            'name' => 'Admin User',
-            'email' => 'super@gmail.com',
-            'password' => Hash::make('password'),
-            'office_id' => $officeUtt->id, // Asignar UTT por defecto
-        ]);
-        $superAdmin->assignRole('super-admin');
-
-        $regularUser = User::create([
-            'name' => 'User',
-            'email' => 'user@gmail.com',
-            'password' => Hash::make('password'),
-        ]);
-        $regularUser->assignRole('user');
     }
 }

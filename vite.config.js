@@ -4,7 +4,7 @@ import vue from '@vitejs/plugin-vue';
 import fs from 'fs';
 
 // Configuration for local HTTPS with Laragon
-const host = 'auth-laravel.test';
+const host = 'laravel-auth.test';
 let serverConfig = {};
 
 if (fs.existsSync('C:/laragon/etc/ssl/laragon.crt') && fs.existsSync('C:/laragon/etc/ssl/laragon.key')) {
